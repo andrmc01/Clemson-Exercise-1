@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<title>Clemson Account Creation</title>
+<head>
+	<link rel="stylesheet" type="text/css" href="CSS/IndexStyles.css" />
+	<link rel="stylesheet" type="text/css" href="CSS/bootstrap.css" />
+	<link rel="stylesheet" type="text/css" href="CSS/datatables.css" />
+
+	<script type="text/javascript" src="JS/jquery-2.1.4.min.js"></script>
+	<script type="text/javascript" src="JS/bootstrap.min.js"></script>
+	<script type="text/javascript" src="JS/jsrender.js"></script>
+	<script type="text/javascript" src="JS/jsrender.utils.js"></script>
+	<script type="text/javascript" src="JS/jquery.datatables.js"></script>
+	<script type="text/javascript" src="JS/moment.js"></script>
+	
+</head>
+<script>
+	//Creating the array to house all the persons
+	var People = [];
+
+	function processInfo(){
+		//Creating a new person object
+		var person = new Object();
+		person.FirstName = new Object;
+		person.LastName = new Object;
+		person.EmailAddress = new Object;
+		person.CreateDate = new Object;
+		
+		//Flag used to determine if there is an issue with the form
+		var flag = false;
+		
+		//Gathering all textboxes to confirm they have an entry and adding an error message if they do not
+		var textboxes = document.getElementsByClassName('TextInput');
+		for(var i=0;i<textboxes.length;i++){
+			if($('#' + textboxes[i].id).val().length == 0){
+				$('#' + textboxes[i].id).addClass('TextboxError');
+				flag = true;
+			}else{
+				$('#' + textboxes[i].id).removeClass('TextboxError');
+				switch(textboxes[i].id.substring(3)){
+					case 'FirstName':
+						person.FirstName = $('#' + textboxes[i].id).val().toUpperCase();
+						break;
+					case 'LastName':
+						person.LastName = $('#' + textboxes[i].id).val().toUpperCase();
+						break;
+					case 'EmailAddress':
+						person.EmailAddress = $('#' + textboxes[i].id).val().toUpperCase();
+						break;
+				}
+			}
+		}
+		
+		//Checking for duplicate email addresses
+		for(var i=0;i<People.length;i++){
+			if(People[i].EmailAddress == ($('#txtEmailAddress').val()).toUpperCase()){
+				$('#lblErrorMsg').text('An account already exists with this email.');
+				$('#txtEmailAddress').addClass('TextboxError');
+				$('#lblErrorMsg').addClass('Active');
+				return;
+			}
+		}
+		
+		//Throwing an imcomplete form error if needed
+		if(flag == true){
+			$('#lblErrorMsg').text('Please complete the form before submitting.');
+			$('#lblErrorMsg').addClass('Active');
+		}else if(flag == false){
+			$('#lblErrorMsg').removeClass('Active');
+			$('#lblErrorMsg').addClass('Hidden');
+			
+			//Clearing out the textboxes
+			$('#txtFirstName').val('');
+			$('#txtLastName').val('');
+			$('#txtEmailAddress').val('');
+			
+			//Adding the account creation date
+			person.CreateDate = moment().format('MM/DD/YYYY');
+			
+			//Adding the new person to the People array
+			People.push(person);
+			
+			displayInfo();
+		}
+	}
+	
+	function displayInfo(){
+		//Destroying any existing table to avoid duplicates
+		$("#tblPeople").dataTable().fnDestroy();
+	
+		//Loading data from the People array into the template
+		$("#tblPeopleBody").html(
+			$("#tblPeopleTemplate").render(People)
+		);
+
+		//Setting up the datatable. It will sort by column two first and then column one.
+		$('#tblPeople').dataTable({
+			"bDestroy": true,
+			"bFilter": true,
+			"bSort": true,
+			"bPaginate": true,
+			"bInfo": true,
+			"aaSorting": [[2, "asc"], [1, "asc"]],
+			"iDisplayLength": 10,
+		});
+		
+		//Un-hiding the div which contains the existing account table
+		$('#ProcessedInfo').removeClass('Hidden');
+		$('#ProcessedInfo').addClass('Active');
+	}
+	
+	function deletePerson(email){
+		//Initiating a new array
+		var newPeople = [];
+		
+		//Putting everyone except the account needing deleted into the new array
+		for(var i=0;i<People.length;i++){
+			if(People[i].EmailAddress != email){
+				newPeople.push(People[i]);
+			}
+		}
+		
+		//Updating the People array with the correct persons
+		People = newPeople;
+		
+		displayInfo();
+		
+	}
+</script>
+<script type="text/js-render" id="tblPeopleTemplate">
+    <tr>
+        <td>{{:FirstName}}</td>
+        <td>{{:LastName}}</td>
+        <td>{{:EmailAddress}}</td>
+        <td>{{:CreateDate}}</td>
+        <td><button onclick="deletePerson('{{:EmailAddress}}')"">Delete</button></td>
+    </tr>
+</script>
+<body>
+	<div class="container">
+		<div class="row">
+			<div id="ProcessedInfo" class="Hidden">
+				<h4>Existing Accounts</h4>
+				<table id="tblPeople" class="dataTable">
+					<thead>
+						<tr>
+							<th>First Name</th>
+							<th>Last Name</th>
+							<th>Email Address</th>
+							<th>Create Date</th>
+							<th>Remove</th>
+						</tr>
+					</thead>
+					<tbody id="tblPeopleBody"></tbody>
+				</table>
+			</div>
+		</div>
+		<div class="row">
+			<div id="ClemsonLogo"></div>
+			<div id="SectionContainer">
+				<h4 id="Section">
+					Account Creation
+				</h4>
+			</div>
+		</div>
+		<div class="row ColorBar">
+			<div class="col-md-6">
+				<h3 class="FormLabel">Instructions</h3>
+				<p>
+					For complete access to the site please create an account
+					using the corresponding legal information requested.
+					
+				</p>
+			</div>
+			<div class="col-md-6 Border">
+				<h3 class='FormLabel'>Personal Information</h3>
+				<table id="tblForm">
+					<tr>
+						<td><label class="TextLabel">First Name</label></td>
+						<td><input class="TextInput" type="text" id="txtFirstName"/></td>
+					</tr>
+					<tr>
+						<td><label class="TextLabel">Last Name</label></td>
+						<td><input class="TextInput" type="text" id="txtLastName"/></td>
+					</tr>
+					<tr>
+						<td><label class="TextLabel">Email Address</label></td>
+						<td><input class="TextInput" type="text" id="txtEmailAddress"/></td>
+					</tr>
+					<tr>
+						<td colspan="2"><button id="btnSubmit" onclick="processInfo();">Submit</button></td>
+					</tr>
+					<tr>
+						<td colspan="2"><label id="lblErrorMsg"></label></td>
+					</tr>
+				</table>
+			</div>
+		</div>
+	</div>
+</body>
+</html>
